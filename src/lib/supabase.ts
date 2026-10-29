@@ -5,3 +5,4 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 // Standard Supabase client (browser and server-safe)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
