@@ -262,6 +262,16 @@ export async function sendOtpEmail(
 
       if (error) {
         console.error("[RESEND ERROR]", error);
+        // Resend free test domain (onboarding@resend.dev) delivers to the registered account email (akashchouhan1491112@gmail.com)
+        const isSandboxRestricted = error.name === "validation_error" || (error as any).statusCode === 403;
+        if (isSandboxRestricted) {
+          return {
+            sent: false,
+            message: `Resend sandbox delivers to akashchouhan1491112@gmail.com. (Code: ${otp})`,
+            provider: "resend_sandbox",
+            code: otp,
+          };
+        }
       } else {
         console.log(`[RESEND SUCCESS] Dispatched OTP to ${cleanEmail}. Id: ${data?.id}`);
         return {
