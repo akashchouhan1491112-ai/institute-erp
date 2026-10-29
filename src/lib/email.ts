@@ -249,7 +249,28 @@ export async function sendOtpEmail(
   const html = getProfessionalOtpEmailHtml(otp, purpose);
   const subject = `Your Verification Code: ${otp} - National Institute of Academic Studies`;
 
-  // 1. Prioritize Resend (Professional Transactional Email API)
+  // 1. Gmail SMTP / Custom SMTP (Can send to ANY email address in the world!)
+  const transporter = getMailTransporter();
+  if (transporter && process.env.SMTP_USER) {
+    try {
+      const info = await transporter.sendMail({
+        from: `"National Institute ERP" <${process.env.SMTP_USER}>`,
+        to: cleanEmail,
+        subject,
+        html,
+      });
+      console.log(`[SMTP SUCCESS] Dispatched OTP to ${cleanEmail}. MessageId: ${info.messageId}`);
+      return {
+        sent: true,
+        message: "Verification email sent directly to your inbox.",
+        provider: "gmail_smtp",
+      };
+    } catch (err: any) {
+      console.error("[SMTP ERROR]", err.message);
+    }
+  }
+
+  // 2. Resend API (Fallback if SMTP not set)
   if (resendClient) {
     try {
       const fromEmail = process.env.EMAIL_FROM || "Institute ERP <onboarding@resend.dev>";
@@ -282,27 +303,6 @@ export async function sendOtpEmail(
       }
     } catch (err: any) {
       console.error("[RESEND EXCEPTION]", err.message);
-    }
-  }
-
-  // 2. SMTP Provider (Gmail, Brevo, AWS SES, Hostinger, Custom Domain SMTP)
-  const transporter = getMailTransporter();
-  if (transporter && process.env.SMTP_USER) {
-    try {
-      const info = await transporter.sendMail({
-        from: `"Institute Admissions" <${process.env.SMTP_USER}>`,
-        to: cleanEmail,
-        subject,
-        html,
-      });
-      console.log(`[SMTP SUCCESS] Dispatched OTP to ${cleanEmail}. MessageId: ${info.messageId}`);
-      return {
-        sent: true,
-        message: "Verification email sent to your inbox.",
-        provider: "smtp",
-      };
-    } catch (err: any) {
-      console.error("[SMTP ERROR]", err.message);
     }
   }
 
