@@ -48,12 +48,28 @@ export async function POST(req: NextRequest) {
       data: { lastLoginAt: new Date() },
     });
 
+    let linkedStudentId = user.student?.id || null;
+    if (user.role === "PARENT" && !linkedStudentId) {
+      const guardian = await prisma.guardian.findFirst({
+        where: {
+          OR: [
+            { guardianEmail: user.email },
+            { guardianPhone: user.phone },
+          ],
+        },
+      });
+      if (guardian) {
+        linkedStudentId = guardian.studentId;
+      }
+    }
+
     const sessionUser: SessionUser = {
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role as SessionUser["role"],
-      studentId: user.student?.id || null,
+      studentId: linkedStudentId,
       teacherId: user.teacher?.id || null,
     };
 

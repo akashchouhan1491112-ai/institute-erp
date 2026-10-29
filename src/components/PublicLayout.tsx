@@ -76,34 +76,41 @@ export default function PublicLayout({ children, settings }: PublicLayoutProps) 
               {email}
             </a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Link
               href="/track"
               className="inline-flex items-center gap-1 text-blue-200 hover:text-white font-semibold transition"
             >
               <Search className="w-3.5 h-3.5" />
-              Track Application
+              Track
             </Link>
             <span className="text-navy-600">|</span>
             <Link
-              href="/student"
+              href="/login/student"
               className="hover:text-white font-medium transition"
             >
-              Student Portal
+              Student
             </Link>
             <span className="text-navy-600">|</span>
             <Link
-              href="/teacher"
+              href="/login/parent"
               className="hover:text-white font-medium transition"
             >
-              Faculty Portal
+              Parent
             </Link>
             <span className="text-navy-600">|</span>
             <Link
-              href="/admin"
-              className="text-blue-200 hover:text-white font-semibold transition"
+              href="/login/admin"
+              className="text-amber-300 hover:text-white font-semibold transition"
             >
-              Administration
+              Staff / Admin
+            </Link>
+            <span className="text-navy-600">|</span>
+            <Link
+              href="/signup"
+              className="text-blue-200 hover:text-white font-bold transition"
+            >
+              Sign Up
             </Link>
           </div>
         </div>
@@ -150,20 +157,26 @@ export default function PublicLayout({ children, settings }: PublicLayoutProps) 
           </nav>
 
           {/* Action CTA Buttons */}
-          <div className="hidden sm:flex items-center gap-2.5">
+          <div className="hidden sm:flex items-center gap-2">
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:border-navy-700 hover:text-navy-900 text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 text-slate-700 hover:border-navy-700 hover:text-navy-900 text-xs font-semibold transition"
             >
               <UserCheck className="w-4 h-4 text-royal-600" />
-              Portal Login
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-royal-600 text-royal-700 hover:bg-blue-50 text-xs font-bold transition"
+            >
+              Sign Up
             </Link>
             <Link
               href="/register"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-navy-800 hover:bg-royal-600 text-white text-xs font-semibold shadow-sm transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-navy-800 hover:bg-royal-600 text-white text-xs font-semibold shadow-sm transition"
             >
               Apply Online
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 

@@ -13,6 +13,7 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: "SUPER_ADMIN" | "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
   studentId?: string | null;
   teacherId?: string | null;
