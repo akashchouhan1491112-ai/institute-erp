@@ -31,18 +31,11 @@ export async function POST(req: NextRequest) {
       const generatedOtp = await generateAndSaveOtp(cleanEmail, purpose);
       const emailResult = await sendOtpEmail(cleanEmail, generatedOtp, purpose);
 
-      if (!emailResult.sent && process.env.SMTP_USER) {
-        return NextResponse.json(
-          { error: emailResult.message || "Failed to deliver verification email. Please verify SMTP settings." },
-          { status: 500 }
-        );
-      }
-
       return NextResponse.json({
         success: true,
         message: emailResult.message,
-        // Include code in response ONLY when SMTP is not configured so user is never stuck during testing
-        code: process.env.SMTP_USER ? undefined : generatedOtp,
+        // Only provided if email delivery service hit a limit or failed
+        code: emailResult.code,
       });
     }
 
