@@ -43,8 +43,8 @@ export default function PublicLayout({ children, settings }: PublicLayoutProps) 
     settings?.instituteName || "National Institute of Academic Studies";
   const tagline =
     settings?.tagline || "Academic Coaching & Institute Management Portal";
-  const phone = settings?.phone || "+91 11 2650 0000";
-  const whatsapp = settings?.whatsapp || "911126500000";
+  const phone = settings?.phone || "+91 93898 56883";
+  const whatsapp = settings?.whatsapp || "9389856883";
   const email = settings?.email || "office@institute.edu.in";
   const address =
     settings?.address ||
@@ -357,16 +357,27 @@ export default function PublicLayout({ children, settings }: PublicLayoutProps) 
       </footer>
 
       {/* WhatsApp Enquiry Button */}
-      <a
-        href={`https://wa.me/${whatsapp}`}
-        target="_blank"
-        rel="noreferrer"
-        className="no-print fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-3 rounded-full shadow-lg transition"
-        aria-label="WhatsApp Enquiry"
-      >
-        <MessageCircle className="w-4 h-4" />
-        <span className="hidden sm:inline">WhatsApp Enquiry</span>
-      </a>
+      {(() => {
+        const cleanNumber = whatsapp.replace(/\D/g, "");
+        const waNumber = cleanNumber.startsWith("91") && cleanNumber.length === 12
+          ? cleanNumber
+          : cleanNumber.length === 10
+          ? `91${cleanNumber}`
+          : cleanNumber || "919389856883";
+        const message = encodeURIComponent("Hello! I would like to enquire about admission, courses, and fee structure.");
+        return (
+          <a
+            href={`https://wa.me/${waNumber}?text=${message}`}
+            target="_blank"
+            rel="noreferrer"
+            className="no-print fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-3 rounded-full shadow-xl hover:scale-105 transition-all duration-200"
+            aria-label="WhatsApp Enquiry Chat"
+          >
+            <MessageCircle className="w-5 h-5 fill-current" />
+            <span className="hidden sm:inline font-bold">WhatsApp Enquiry (9389856883)</span>
+          </a>
+        );
+      })()}
     </div>
   );
 }
