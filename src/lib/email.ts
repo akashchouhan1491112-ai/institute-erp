@@ -3,20 +3,37 @@ import { prisma } from "./prisma";
 
 // SMTP Transporter configuration
 export function getMailTransporter() {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const host = process.env.SMTP_HOST || "";
+  const user = process.env.SMTP_USER || "";
+  const pass = process.env.SMTP_PASS || "";
   const port = Number(process.env.SMTP_PORT) || 587;
 
-  if (!host || !user || !pass) {
+  if (!user || !pass) {
     return null;
   }
 
+  // Gmail special case: built-in service handles SSL/TLS ports automatically
+  if (host.toLowerCase().includes("gmail") || user.toLowerCase().endsWith("@gmail.com")) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user,
+        pass: pass.replace(/\s+/g, ""), // clean spaces if copied from Google App Password
+      },
+    });
+  }
+
   return nodemailer.createTransport({
-    host,
+    host: host || "smtp.gmail.com",
     port,
     secure: port === 465,
-    auth: { user, pass },
+    auth: {
+      user,
+      pass: pass.replace(/\s+/g, ""),
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 }
 
@@ -118,21 +135,22 @@ export async function sendOtpEmail(email: string, otp: string, purpose: string =
   }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"Institute ERP" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: `Your Verification Code: ${otp}`,
+      subject: `Your Verification Code: ${otp} - Coaching Institute ERP`,
       html,
     });
+    console.log(`[SMTP SUCCESS] Verification code sent to ${email}. MessageId: ${info.messageId}`);
     return {
       sent: true,
-      message: "Verification code sent to your email.",
+      message: "Verification code sent directly to your email address.",
     };
   } catch (err: any) {
-    console.warn("SMTP send failed, falling back to instant code:", err.message);
+    console.error("[SMTP ERROR] Failed to send email via SMTP:", err.message);
     return {
-      sent: true,
-      message: `Verification code generated. (Code: ${otp})`,
+      sent: false,
+      message: `Failed to deliver email: ${err.message}`,
     };
   }
 }
