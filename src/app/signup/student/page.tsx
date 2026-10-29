@@ -75,9 +75,10 @@ export default function StudentSignupPage() {
       } else {
         setOtpSent(true);
         if (json.code) {
-          setOtpHint(`Verification Code: ${json.code}`);
+          setOtpHint(`Verification Code: ${json.code} (Auto-filled below & sent to email)`);
+          setForm((prev) => ({ ...prev, otp: json.code }));
         } else {
-          setOtpHint("Verification code sent to your email.");
+          setOtpHint("Verification code sent to your email. Check inbox & spam folder.");
         }
       }
     } catch {

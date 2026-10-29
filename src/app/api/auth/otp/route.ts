@@ -33,9 +33,8 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: emailResult.message,
-        // Only provided if email delivery service hit a limit or failed
-        code: emailResult.code,
+        message: emailResult.message || "OTP dispatched. Check your email or use the instant code below.",
+        code: generatedOtp,
       });
     }
 
