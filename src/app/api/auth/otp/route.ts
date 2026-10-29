@@ -33,8 +33,9 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: emailResult.message || "OTP dispatched. Check your email or use the instant code below.",
-        code: generatedOtp,
+        message: emailResult.message,
+        provider: emailResult.provider,
+        code: emailResult.sent ? undefined : emailResult.code,
       });
     }
 

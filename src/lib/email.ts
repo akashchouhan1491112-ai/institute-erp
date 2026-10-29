@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { prisma } from "./prisma";
-import { supabase } from "./supabase";
+
+// Initialize Resend client if API key is provided
+const resendApiKey = process.env.RESEND_API_KEY;
+const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
 
 // SMTP Transporter configuration (optional, if custom SMTP is used)
 export function getMailTransporter() {
@@ -13,7 +17,7 @@ export function getMailTransporter() {
     return null;
   }
 
-  // Gmail special case: built-in service handles SSL/TLS ports automatically
+  // Gmail built-in service helper
   if (host.toLowerCase().includes("gmail") || user.toLowerCase().endsWith("@gmail.com")) {
     return nodemailer.createTransport({
       service: "gmail",
@@ -38,32 +42,138 @@ export function getMailTransporter() {
   });
 }
 
-function getEmailHtml(otp: string, purpose: string = "SIGNUP"): string {
-  const title =
+// Generate an ultra-professional, responsive HTML email template
+export function getProfessionalOtpEmailHtml(otp: string, purpose: string = "SIGNUP"): string {
+  const roleTitle =
     purpose === "ADMIN_SIGNUP"
-      ? "Staff & Admin Registration Verification"
+      ? "Staff & Administrative Portal"
       : purpose === "PARENT_SIGNUP"
-      ? "Parent Portal Registration Verification"
-      : "Student Portal Registration Verification";
+      ? "Parent & Guardian Portal"
+      : "Student Academic Portal";
+
+  const instituteName = process.env.NEXT_PUBLIC_INSTITUTE_NAME || "National Institute of Academic Studies";
+  const whatsappNumber = "+91 93898 56883";
 
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-      <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0;">
-        <h2 style="color: #0f172a; margin: 0;">Coaching Institute ERP</h2>
-        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Email Verification Code</p>
-      </div>
-      <div style="padding: 24px 0;">
-        <p style="color: #334155; font-size: 14px;">Hello,</p>
-        <p style="color: #334155; font-size: 14px;">Use the following One-Time Password (OTP) to complete your <strong>${title}</strong>. This code is valid for 10 minutes.</p>
-        <div style="background: #f1f5f9; padding: 18px; border-radius: 8px; text-align: center; margin: 24px 0;">
-          <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e3a8a; font-family: monospace;">${otp}</span>
-        </div>
-        <p style="color: #64748b; font-size: 12px;">If you did not request this verification code, please ignore this email.</p>
-      </div>
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; text-align: center; color: #94a3b8; font-size: 11px;">
-        © 2026 National Institute of Academic Studies. All rights reserved.
-      </div>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Code - ${instituteName}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <!-- Preview text visible in inbox list -->
+  <div style="display: none; max-height: 0px; overflow: hidden; opacity: 0;">
+    Your security verification code is ${otp}. Use this code to complete your registration for ${instituteName}.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 36px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); padding: 32px 32px 28px; text-align: center;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <div style="display: inline-block; background: rgba(255, 255, 255, 0.12); padding: 6px 16px; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 12px;">
+                      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #fde047;">
+                        Enterprise ERP Security
+                      </span>
+                    </div>
+                    <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.5px;">
+                      ${instituteName}
+                    </h1>
+                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
+                      Official Account Verification Notice
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main Body -->
+          <tr>
+            <td style="padding: 36px 36px 28px;">
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px;">
+                Hello,
+              </p>
+              <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 24px;">
+                You are registering for access to the <strong>${roleTitle}</strong>. Please use the one-time verification code below to confirm your email identity and complete your account creation:
+              </p>
+
+              <!-- OTP Code Display Card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 28px 0;">
+                <tr>
+                  <td align="center" style="background-color: #f8fafc; border: 2px dashed #93c5fd; border-radius: 14px; padding: 26px 20px;">
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #64748b; margin-bottom: 8px;">
+                      Single-Use Security Code
+                    </div>
+                    <div style="font-size: 40px; font-weight: 900; letter-spacing: 12px; color: #1e3a8a; font-family: 'Courier New', Courier, monospace; padding-left: 12px;">
+                      ${otp}
+                    </div>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 10px; font-weight: 500;">
+                      ⏱ Valid for 10 minutes only
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Security Warning Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px 16px; border-radius: 0 8px 8px 0;">
+                    <p style="font-size: 12px; line-height: 1.5; color: #92400e; margin: 0;">
+                      <strong>Security Tip:</strong> Never share this code with anyone. Institutional staff or faculty will never contact you asking for your verification code.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size: 13px; line-height: 1.6; color: #64748b; margin: 0 0 8px;">
+                If you did not request this verification code, please ignore this email. No changes will be made to your institutional profile.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Contact & Support Divider -->
+          <tr>
+            <td style="padding: 0 36px;">
+              <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; padding-bottom: 24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                      <strong>Questions or need assistance?</strong><br>
+                      Admissions Helpdesk WhatsApp: <a href="https://wa.me/919389856883" style="color: #2563eb; text-decoration: none; font-weight: 600;">${whatsappNumber}</a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 24px 36px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="font-size: 11px; color: #94a3b8; margin: 0 0 6px; line-height: 1.4;">
+                This is an automated system notification from ${instituteName} ERP System.
+              </p>
+              <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.4;">
+                © 2026 ${instituteName}. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
   `;
 }
 
@@ -94,7 +204,7 @@ export async function generateAndSaveOtp(email: string, purpose: string = "SIGNU
   return otp;
 }
 
-// Verify OTP - supports both local OTP and Supabase Auth OTP verification
+// Verify OTP against database
 export async function verifyOtpRecord(
   email: string,
   otp: string,
@@ -103,7 +213,6 @@ export async function verifyOtpRecord(
   const cleanEmail = email.trim().toLowerCase();
   const cleanOtp = otp.trim();
 
-  // 1. Check local database OTP
   const record = await prisma.emailOtp.findFirst({
     where: {
       email: cleanEmail,
@@ -114,121 +223,85 @@ export async function verifyOtpRecord(
     orderBy: { createdAt: "desc" },
   });
 
-  if (record) {
-    if (new Date() > record.expiresAt) {
-      return { valid: false, error: "Verification code has expired. Please request a new code." };
-    }
-
-    await prisma.emailOtp.update({
-      where: { id: record.id },
-      data: { verified: true },
-    });
-
-    return { valid: true };
+  if (!record) {
+    return { valid: false, error: "Invalid verification code. Please check and try again." };
   }
 
-  // 2. Also check with Supabase Auth OTP directly
-  try {
-    const { data: supaEmailData, error: supaEmailError } = await supabase.auth.verifyOtp({
-      email: cleanEmail,
-      token: cleanOtp,
-      type: "email",
-    });
-
-    if (!supaEmailError && supaEmailData?.user) {
-      await prisma.emailOtp.updateMany({
-        where: { email: cleanEmail, purpose },
-        data: { verified: true },
-      });
-      return { valid: true };
-    }
-
-    const { data: supaSignupData, error: supaSignupError } = await supabase.auth.verifyOtp({
-      email: cleanEmail,
-      token: cleanOtp,
-      type: "signup",
-    });
-
-    if (!supaSignupError && supaSignupData?.user) {
-      await prisma.emailOtp.updateMany({
-        where: { email: cleanEmail, purpose },
-        data: { verified: true },
-      });
-      return { valid: true };
-    }
-  } catch (supaErr) {
-    console.error("Supabase OTP verify error:", supaErr);
+  if (new Date() > record.expiresAt) {
+    return { valid: false, error: "Verification code has expired. Please request a new code." };
   }
 
-  return { valid: false, error: "Invalid or expired verification code." };
+  await prisma.emailOtp.update({
+    where: { id: record.id },
+    data: { verified: true },
+  });
+
+  return { valid: true };
 }
 
-// Send OTP Email using Supabase Mailer as primary service, or custom SMTP if configured
+// Send OTP Email using professional transactional email service
 export async function sendOtpEmail(
   email: string,
   otp: string,
   purpose: string = "SIGNUP"
-): Promise<{ sent: boolean; message: string; code?: string }> {
+): Promise<{ sent: boolean; message: string; provider: string; code?: string }> {
   const cleanEmail = email.trim().toLowerCase();
+  const html = getProfessionalOtpEmailHtml(otp, purpose);
+  const subject = `Your Verification Code: ${otp} - National Institute of Academic Studies`;
 
-  // 1. If custom SMTP is explicitly configured with user and pass, send via SMTP
+  // 1. Prioritize Resend (Professional Transactional Email API)
+  if (resendClient) {
+    try {
+      const fromEmail = process.env.EMAIL_FROM || "Institute ERP <onboarding@resend.dev>";
+      const { data, error } = await resendClient.emails.send({
+        from: fromEmail,
+        to: cleanEmail,
+        subject,
+        html,
+      });
+
+      if (error) {
+        console.error("[RESEND ERROR]", error);
+      } else {
+        console.log(`[RESEND SUCCESS] Dispatched OTP to ${cleanEmail}. Id: ${data?.id}`);
+        return {
+          sent: true,
+          message: "Verification email sent to your inbox.",
+          provider: "resend",
+        };
+      }
+    } catch (err: any) {
+      console.error("[RESEND EXCEPTION]", err.message);
+    }
+  }
+
+  // 2. SMTP Provider (Gmail, Brevo, AWS SES, Hostinger, Custom Domain SMTP)
   const transporter = getMailTransporter();
   if (transporter && process.env.SMTP_USER) {
     try {
       const info = await transporter.sendMail({
-        from: `"Institute ERP" <${process.env.SMTP_USER}>`,
+        from: `"Institute Admissions" <${process.env.SMTP_USER}>`,
         to: cleanEmail,
-        subject: `Your Verification Code: ${otp} - Coaching Institute ERP`,
-        html: getEmailHtml(otp, purpose),
+        subject,
+        html,
       });
-      console.log(`[SMTP SUCCESS] Verification code sent to ${cleanEmail}. MessageId: ${info.messageId}`);
+      console.log(`[SMTP SUCCESS] Dispatched OTP to ${cleanEmail}. MessageId: ${info.messageId}`);
       return {
         sent: true,
-        message: "Verification code sent to your email inbox.",
+        message: "Verification email sent to your inbox.",
+        provider: "smtp",
       };
     } catch (err: any) {
-      console.error("[SMTP ERROR] Failed to send email via SMTP:", err.message);
+      console.error("[SMTP ERROR]", err.message);
     }
   }
 
-  // 2. Send email via Supabase Mail Service
-  try {
-    console.log(`[SUPABASE MAIL] Dispatching OTP email to ${cleanEmail} via Supabase...`);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: cleanEmail,
-      options: {
-        shouldCreateUser: true,
-      },
-    });
-
-    if (error) {
-      console.warn(`[SUPABASE MAIL WARNING] ${error.message}`);
-      // If Supabase rate limit is reached (e.g. 3 emails/hr on free built-in mailer)
-      if (error.status === 429 || error.message.toLowerCase().includes("rate limit")) {
-        return {
-          sent: true,
-          message: "Supabase mail limit reached. Use this verification code to proceed.",
-          code: otp,
-        };
-      }
-      return {
-        sent: true,
-        message: `Verification code generated. (Code: ${otp})`,
-        code: otp,
-      };
-    }
-
-    console.log(`[SUPABASE MAIL SUCCESS] Email successfully dispatched by Supabase to ${cleanEmail}`);
-    return {
-      sent: true,
-      message: "Verification email sent to your inbox by Supabase Mail.",
-    };
-  } catch (err: any) {
-    console.error("[SUPABASE MAIL EXCEPTION]", err);
-    return {
-      sent: true,
-      message: `Verification code generated. (Code: ${otp})`,
-      code: otp,
-    };
-  }
+  // 3. Fallback when neither Resend API Key nor SMTP credentials are fully connected
+  console.log(`[DEV OTP NOTIFICATION] Email: ${cleanEmail} | OTP: ${otp}`);
+  return {
+    sent: false,
+    message: "Email service provider not yet connected. For demo/testing, code is provided below.",
+    provider: "local",
+    code: otp,
+  };
 }

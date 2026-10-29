@@ -23,6 +23,7 @@
     "nodemailer": "^10.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.35.0",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
