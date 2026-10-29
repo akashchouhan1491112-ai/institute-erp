@@ -638,3 +638,18 @@ model AuditLog {
   @@index([entityType])
   @@index([createdAt])
 }
+
+
+// 29. Email OTP Verification
+model EmailOtp {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  purpose   String   @default("SIGNUP")
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+

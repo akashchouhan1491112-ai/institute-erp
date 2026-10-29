@@ -261,7 +261,7 @@ function LoginContent() {
             </button>
           </form>
 
-          {/* Sign Up Link for Students & Parents */}
+          {/* Sign Up Link for Students, Parents & Admins */}
           {activeRole !== "ADMIN" ? (
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
               <div>
@@ -287,9 +287,28 @@ function LoginContent() {
               </Link>
             </div>
           ) : (
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-              <span>Super Administrator bootstrap credentials: </span>
-              <code className="font-mono font-bold text-navy-900">admin@institute.edu.in</code>
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-navy-50/80 border border-navy-200 flex items-center justify-between text-xs">
+                <div>
+                  <span className="font-bold text-navy-900 block">
+                    New Admin or Staff Member?
+                  </span>
+                  <span className="text-slate-600">
+                    Register with Email OTP & institute key.
+                  </span>
+                </div>
+                <Link
+                  href="/signup/admin"
+                  className="px-3.5 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-amber-300 font-bold flex items-center gap-1.5 transition text-xs shrink-0 shadow-sm"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Admin Sign Up
+                </Link>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                <span>Super Administrator bootstrap credentials: </span>
+                <code className="font-mono font-bold text-navy-900">admin@institute.edu.in</code>
+              </div>
             </div>
           )}
 

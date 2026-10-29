@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Users,
   CheckCircle2,
+  UserPlus,
 } from "lucide-react";
 
 export default function AdminLoginPage() {
@@ -134,6 +135,25 @@ export default function AdminLoginPage() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+
+            {/* Admin Sign Up Card */}
+            <div className="p-4 rounded-xl bg-navy-50/80 border border-navy-200 flex items-center justify-between text-xs">
+              <div>
+                <span className="font-bold text-navy-900 block">
+                  New Admin or Staff Member?
+                </span>
+                <span className="text-slate-600">
+                  Register with Email OTP & institute key.
+                </span>
+              </div>
+              <Link
+                href="/signup/admin"
+                className="px-3.5 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-amber-300 font-bold flex items-center gap-1.5 transition text-xs shrink-0 shadow-sm"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                Admin Sign Up
+              </Link>
+            </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
               <span>Are you a student or parent?</span>

@@ -14,6 +14,7 @@ import {
   BookOpen,
   MapPin,
   CheckCircle2,
+  KeyRound,
 } from "lucide-react";
 
 export default function StudentSignupPage() {
@@ -28,7 +29,13 @@ export default function StudentSignupPage() {
     qualification: "Class 11 / 12 Appearing",
     city: "",
     state: "Delhi NCR",
+    otp: "",
   });
+
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpHint, setOtpHint] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
@@ -45,8 +52,48 @@ export default function StudentSignupPage() {
       .catch(console.error);
   }, []);
 
+  async function handleSendOtp() {
+    if (!form.email || !form.email.includes("@")) {
+      setError("Please enter a valid student email address first.");
+      return;
+    }
+    setError("");
+    setOtpLoading(true);
+    try {
+      const res = await fetch("/api/auth/otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_OTP",
+          email: form.email,
+          purpose: "SIGNUP",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || "Failed to send OTP.");
+      } else {
+        setOtpSent(true);
+        if (json.code) {
+          setOtpHint(`Verification Code: ${json.code}`);
+        } else {
+          setOtpHint("Verification code sent to your email.");
+        }
+      }
+    } catch {
+      setError("Network error sending OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.otp || form.otp.length < 6) {
+      setError("Please enter the 6-digit email verification code.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -80,7 +127,7 @@ export default function StudentSignupPage() {
   return (
     <PublicLayout>
       <section className="py-12 lg:py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10 space-y-6">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-royal-600 text-white flex items-center justify-center shadow-sm">
@@ -154,10 +201,11 @@ export default function StudentSignupPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            {/* Email & OTP Send Button */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <div className="sm:col-span-8">
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Email Address *
+                  Student Email Address *
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -166,15 +214,53 @@ export default function StudentSignupPage() {
                     required
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="name@gmail.com"
+                    placeholder="student@gmail.com"
                     className="w-full rounded-xl border border-slate-300 pl-10 pr-4 py-2.5 text-xs sm:text-sm focus:border-royal-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-4">
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={otpLoading}
+                  className="w-full py-2.5 rounded-xl bg-royal-600 hover:bg-royal-700 text-white font-bold text-xs transition disabled:opacity-60"
+                >
+                  {otpLoading ? "Sending OTP..." : otpSent ? "Resend OTP" : "Send Email OTP"}
+                </button>
+              </div>
+            </div>
+
+            {otpHint && (
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-medium flex items-center justify-between">
+                <span>{otpHint}</span>
+              </div>
+            )}
+
+            {/* OTP & Password */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  6-Digit Email OTP *
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={form.otp}
+                    onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                    placeholder="Enter 6-digit OTP"
+                    className="w-full rounded-xl border border-slate-300 pl-10 pr-4 py-2.5 text-xs sm:text-sm font-mono tracking-widest uppercase focus:border-royal-600 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Create Account Password *
+                  Create Password *
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -261,21 +347,26 @@ export default function StudentSignupPage() {
                 disabled={loading}
                 className="w-full py-3.5 rounded-xl bg-royal-600 hover:bg-royal-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-60"
               >
-                {loading ? "Creating Student Account..." : "Complete Registration & Access Portal"}
+                {loading ? "Creating Student Account..." : "Verify OTP & Access Student Portal"}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </form>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Are you a Parent or Guardian?</span>
-            <Link href="/signup/parent" className="text-royal-600 font-bold hover:underline">
-              Create Parent Account →
-            </Link>
+            <span>Are you a Parent or Staff member?</span>
+            <div className="flex gap-2">
+              <Link href="/signup/parent" className="text-royal-600 font-bold hover:underline">
+                Parent Sign Up
+              </Link>
+              <span>•</span>
+              <Link href="/signup/admin" className="text-navy-900 font-bold hover:underline">
+                Admin Sign Up
+              </Link>
+            </div>
           </div>
         </div>
       </section>
     </PublicLayout>
   );
 }
-

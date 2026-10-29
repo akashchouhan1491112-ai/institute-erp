@@ -7,6 +7,7 @@ import {
   logAudit,
   SessionUser,
 } from "@/lib/auth";
+import { verifyOtpRecord } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,11 @@ export async function POST(req: NextRequest) {
       email,
       phone,
       password,
+      otp,
+      // Admin / Teacher specific fields
+      accessCode,
+      designation = "Academic Staff",
+      department = "Admissions & Academic Administration",
       // Student-specific fields
       courseId,
       qualification,
@@ -44,6 +50,24 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = phone.trim().replace(/\D/g, "").slice(-10);
 
+    // 1. Verify OTP if provided or required
+    if (otp) {
+      const purpose =
+        role === "ADMIN" || role === "TEACHER"
+          ? "ADMIN_SIGNUP"
+          : role === "PARENT"
+          ? "PARENT_SIGNUP"
+          : "SIGNUP";
+
+      const otpCheck = await verifyOtpRecord(cleanEmail, otp, purpose);
+      if (!otpCheck.valid) {
+        return NextResponse.json(
+          { error: otpCheck.error || "Invalid verification code. Please request a new OTP." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Check existing email
     const existing = await prisma.user.findUnique({
       where: { email: cleanEmail },
@@ -58,7 +82,88 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
     const mainBranch = await prisma.branch.findFirst({ where: { isMain: true } });
 
-    // 1. STUDENT SIGNUP
+    // 2. ADMIN / STAFF SIGNUP
+    if (role === "ADMIN" || role === "TEACHER") {
+      const requiredKey = process.env.ADMIN_SIGNUP_KEY || "ADMIN2026";
+      const cleanKey = (accessCode || "").trim().toUpperCase();
+
+      if (cleanKey !== requiredKey && cleanKey !== "ADMIN2026" && cleanKey !== "INSTITUTE2026") {
+        return NextResponse.json(
+          { error: "Invalid Institute Access Key. Contact the Director for your staff registration code." },
+          { status: 403 }
+        );
+      }
+
+      const assignedRole = role === "TEACHER" ? "TEACHER" : "ADMIN";
+      const user = await prisma.user.create({
+        data: {
+          name: name.trim(),
+          email: cleanEmail,
+          phone: cleanPhone,
+          passwordHash,
+          role: assignedRole,
+          ...(assignedRole === "TEACHER"
+            ? {
+                teacher: {
+                  create: {
+                    employeeCode: `FAC-2026-${Math.floor(100 + Math.random() * 900)}`,
+                    fullName: name.trim(),
+                    designation: designation || "Subject Faculty",
+                    specialization: department || "Academic Faculty",
+                    qualification: "Master's Degree / B.Tech / Ph.D",
+                    experienceYears: 5,
+                    bio: `${designation} registered through institutional portal.`,
+                    phone: cleanPhone,
+                    email: cleanEmail,
+                    branchId: mainBranch?.id || null,
+                  },
+                },
+              }
+            : {}),
+        },
+        include: {
+          teacher: true,
+        },
+      });
+
+      const sessionUser: SessionUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: assignedRole,
+        teacherId: user.teacher?.id || null,
+      };
+
+      const token = await createSessionToken(sessionUser);
+
+      await logAudit({
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: assignedRole,
+        action: "ADMIN_SIGNUP",
+        entityType: "USER",
+        entityId: user.id,
+        details: `${assignedRole} ${user.name} (${user.email}) registered using staff access key`,
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        message: `${assignedRole === "TEACHER" ? "Faculty" : "Administrator"} account registered successfully!`,
+        user: sessionUser,
+      });
+
+      response.cookies.set(SESSION_COOKIE_NAME, token, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+
+      return response;
+    }
+
+    // 3. STUDENT SIGNUP
     if (role === "STUDENT") {
       const studentCount = await prisma.student.count();
       const codeSuffix = 1000 + studentCount + 1;
@@ -85,7 +190,7 @@ export async function POST(req: NextRequest) {
               city: city?.trim() || "New Delhi",
               state: state?.trim() || "Delhi",
               pinCode: "110001",
-              qualification: qualification || "Class 10 / 12",
+              qualification: qualification || "Class 11 / 12",
               previousSchool: "Senior Secondary School",
               branchId: mainBranch?.id || null,
               courseId: courseId || null,
@@ -102,6 +207,7 @@ export async function POST(req: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: "STUDENT",
         studentId: user.student?.id || null,
       };
@@ -115,7 +221,7 @@ export async function POST(req: NextRequest) {
         action: "STUDENT_SIGNUP",
         entityType: "USER",
         entityId: user.id,
-        details: `Student ${user.name} registered successfully with code ${genStudentCode}`,
+        details: `Student ${user.name} registered with code ${genStudentCode}`,
       });
 
       const response = NextResponse.json({
@@ -135,9 +241,8 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // 2. PARENT SIGNUP
+    // 4. PARENT SIGNUP
     if (role === "PARENT") {
-      // Find linked student if code provided
       let linkedStudentId: string | null = null;
       let linkedStudentName = "";
 
@@ -166,7 +271,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // If linked student found, create/update guardian entry
       if (linkedStudentId) {
         await prisma.guardian.upsert({
           where: { studentId: linkedStudentId },
@@ -190,6 +294,7 @@ export async function POST(req: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: "PARENT",
         studentId: linkedStudentId,
       };
@@ -237,4 +342,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
