@@ -62,7 +62,7 @@ export default function ParentSignupPage() {
           setOtpHint(`Demo Mode Code: ${json.code} (Enter this code or configure Resend/SMTP)`);
           setForm((prev) => ({ ...prev, otp: json.code }));
         } else {
-          setOtpHint("Verification email sent to your inbox. Please check your email for the 6-digit code.");
+          setOtpHint("Verification email sent! Please check your Inbox and Spam / Junk folder.");
           setForm((prev) => ({ ...prev, otp: "" }));
         }
       }

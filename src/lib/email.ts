@@ -253,16 +253,18 @@ export async function sendOtpEmail(
   const transporter = getMailTransporter();
   if (transporter && process.env.SMTP_USER) {
     try {
+      const text = `Your verification code is: ${otp}\n\nValid for 10 minutes for National Institute of Academic Studies ERP registration.\n\nIf you did not request this code, please ignore this message.`;
       const info = await transporter.sendMail({
         from: `"National Institute ERP" <${process.env.SMTP_USER}>`,
         to: cleanEmail,
         subject,
+        text,
         html,
       });
       console.log(`[SMTP SUCCESS] Dispatched OTP to ${cleanEmail}. MessageId: ${info.messageId}`);
       return {
         sent: true,
-        message: "Verification email sent directly to your inbox.",
+        message: "Verification email sent. Please check your inbox (and Spam folder).",
         provider: "gmail_smtp",
       };
     } catch (err: any) {
